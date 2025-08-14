@@ -1,0 +1,82 @@
+---
+title: "Working with the Ghana Statistical Service Statsbank API"
+format: html
+execute: 
+  eval: false
+---
+
+## The Ghana Statistical Service StatsBank API
+
+The Ghana Statistical Service provides survey and census data through the [StatsBank](https://statsbank.statsghana.gov.gh/index.html). This service allows users to query and get data tables for available official statistics. Detailed guidance on how to use the website can be found in the [User Guide](https://statsbank.statsghana.gov.gh/Resources/userguide/statsbank_userguide_1.3.pdf).
+
+A data table that has been constructed is represented as a matrix (shown in the figure below) and can be downloaded as a csv, Excel or json file, among others. <br><br>
+![data-table-screenshot](img/data-table-screenshot.png){#fig-1}
+
+## Retrieving Data Tables using R
+
+If you are interested in a more programmatic approach to data retrieval, an option is provided just below the data table that lets the user post a JSON query to the StatsBank API. This is the focus of this article.
+
+For the data table that was retrieved earlier, the webpage details how the JSON query should be constructed before it is submitted to the API URL. <br><br> ![api-query-screenshot](img/api-query-screenshot.png) 
+<br><br>
+
+In R, we can generate HTTP requests and work with the responses using the [httr2](https://httr2.r-lib.org/) package. This means making a POST request to the specified URL (Remember to replace all spaces with %20, which is the appropriate HTML URL encoding) and getting a response that we can work with. This URL is how we can access the API.
+
+To make a POST request, we need to create a request object using `request()` and add data to the request using `req_body_json()` or some other `req_body_*()` function. In this case, the data we're interested in sending is the query to retrieve some statistics on wastewater disposal from the 2021 Population and Housing Census. The actual request is sent using `req_perform()`.
+
+```{r}
+library(httr2)
+
+url = "https://statsbank.statsghana.gov.gh:443/api/v1/en/PHC%202021%20StatsBank/Water%20and%20Sanitation/waterDisposal_table.px"
+  
+# Construct query
+query = list(
+  query = list(
+    list(
+      code = "WaterDisposal",
+      selection = list(
+        filter = "item",
+        values = list("Through the sewerage system")
+      )
+    )
+  ),
+  response = list(
+    format = "csv"
+  )
+)
+
+# Create and make a request
+req = request(url) |> 
+  req_body_json(query)
+
+resp = req |> 
+  req_perform()
+```
+
+We can check the JSON representation of the query that has been constructed using the jsonlite package.
+
+```{r}
+library(jsonlite)
+
+toJSON(query) |> 
+  prettify()
+```
+
+Once satisfied with the query, we can use the httr2 methods to create and perform a request.  The req_body_json function lets us send some data to the URL. In this case, the data we're interested in sending is a query that lets us retrieve some data. We then make the request using req_perform and get a response from the server. 
+
+```{r}
+
+
+```
+
+While it is possible to post the JSON query as is, I prefer to reconstruct it using R syntax.   
+
+
+
+From the User Guide, the StatsBank was built using a [PxWeb](https://www.scb.se/px-web) backend which is a widely used across various countries to present and disseminate statistical data from government agencies and international organizations.
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
